@@ -20,19 +20,26 @@
 
 ## 安装
 
-**方式一：装 `.skill` 包（推荐）**
+**一行命令（推荐）**
 
-下载 [`personal-review.skill`](personal-review.skill)，在 Claude Code 里安装即可。
+```bash
+npx typeless-personal-review
+```
 
-**方式二：手动放到 skills 目录**
+自动把 skill 装进 `~/.claude/skills/personal-review/`，装完直接用。
+
+**或者手动放到 skills 目录**
 
 ```bash
 git clone https://github.com/JamesRRR/typeless-personal-review.git
 cp -R typeless-personal-review/skills/personal-review ~/.claude/skills/
 ```
 
+也可以下载 [`personal-review.skill`](personal-review.skill) 安装包，在 Claude Code 里安装。
+
 > 前置：本机装了 Typeless 桌面版并已有一些语音记录（数据在
-> `~/Library/Application Support/Typeless/typeless.db`）；Python 3（用系统自带的即可，无第三方依赖）。
+> `~/Library/Application Support/Typeless/typeless.db`）；Node 16+（跑 npx 用）；
+> Python 3（用系统自带的即可，无第三方依赖）。
 
 ## 使用
 

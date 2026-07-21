@@ -1,0 +1,21 @@
+{
+  "name": "typeless-personal-review",
+  "version": "1.0.0",
+  "description": "一键安装 Personal Review —— 把 Typeless 本地语音记录变成图示化个人复盘的 Claude Code Skill",
+  "bin": {
+    "typeless-personal-review": "bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "skill/"
+  ],
+  "keywords": ["claude-code", "claude-skill", "typeless", "personal-review", "voice"],
+  "author": "JamesRRR",
+  "license": "MIT",
+  "homepage": "https://github.com/JamesRRR/typeless-personal-review",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JamesRRR/typeless-personal-review.git"
+  },
+  "engines": { "node": ">=16" }
+}
