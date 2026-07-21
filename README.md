@@ -2,7 +2,8 @@
 
 把 [Typeless](https://typeless.now/) 永久保存在本地的全部语音口述记录，一键变成一份**图示化的个人复盘报告**——看清你最近一段时间的注意力去了哪、在反复纠结什么、做了哪些决定、哪些想法悬而未决。
 
-这是一个 [Claude Code](https://claude.com/claude-code) Skill。
+**通用工具，不绑定某个 AI**——支持 [Claude Code](https://claude.com/claude-code)、
+[Codex](https://openai.com/codex/)，以及任意能读写文件、跑命令的 AI agent。
 
 <p align="center">
   <img src="docs/preview.png" alt="Personal Review 报告预览" width="720">
@@ -23,19 +24,24 @@
 **一行命令（推荐）**
 
 ```bash
-npx typeless-personal-review
+npx typeless-personal-review install
 ```
 
-自动把 skill 装进 `~/.claude/skills/personal-review/`，装完直接用。
+自动检测你在用 Claude 还是 Codex，装对应的适配层。也可以指定：
 
-**或者手动放到 skills 目录**
+```bash
+npx typeless-personal-review install --agent claude    # Claude Code
+npx typeless-personal-review install --agent codex     # Codex
+npx typeless-personal-review install --agent generic   # 任意 agent（给你一份指令文档）
+```
+
+**Claude Code 用户也可以**手动放到 skills 目录，或下载
+[`personal-review.skill`](personal-review.skill) 安装包：
 
 ```bash
 git clone https://github.com/JamesRRR/typeless-personal-review.git
 cp -R typeless-personal-review/skills/personal-review ~/.claude/skills/
 ```
-
-也可以下载 [`personal-review.skill`](personal-review.skill) 安装包，在 Claude Code 里安装。
 
 > 前置：本机装了 Typeless 桌面版并已有一些语音记录（数据在
 > `~/Library/Application Support/Typeless/typeless.db`）；Node 16+（跑 npx 用）；
@@ -43,7 +49,7 @@ cp -R typeless-personal-review/skills/personal-review ~/.claude/skills/
 
 ## 使用
 
-在 Claude Code 里直接说，或用 slash command：
+**Claude Code** — 直接说，或用 slash command：
 
 ```
 /personal-review            # 默认最近一周
@@ -51,9 +57,20 @@ cp -R typeless-personal-review/skills/personal-review ~/.claude/skills/
 /personal-review all        # 全量
 ```
 
-也可以用自然语言：「帮我做一下这周的 personal review」「复盘一下我全部的 typeless 记录」。
+也可以用自然语言：「帮我做一下这周的 personal review」。
 
-产出一个可分享的图示化 HTML 报告 + 一份 markdown 镜像。报告是你的私人数据，默认私有，是否分享由你决定。
+**Codex / 其他 agent** — 让它读装好的指令文档（`~/.typeless-review/AGENTS.md` 或
+`PROMPT.md`），按里面的 4 步跑。
+
+底层就三个命令，任何 agent 都能调：
+
+```bash
+typeless-personal-review collect --range week      # 读本地库 → corpus + stats
+# （agent 读 corpus，按 analysis-guide 出 insights.json）
+typeless-personal-review render insights.json --open   # → 自包含 HTML 报告
+```
+
+产出一个自包含的图示化 HTML 报告（Claude 版还能发成可分享的 Artifact）。报告是你的私人数据，只在本地。
 
 ## 工作原理
 

@@ -1,21 +1,20 @@
 {
   "name": "typeless-personal-review",
-  "version": "1.0.0",
-  "description": "一键安装 Personal Review —— 把 Typeless 本地语音记录变成图示化个人复盘的 Claude Code Skill",
+  "version": "2.0.0",
+  "description": "把 Typeless 本地语音记录变成图示化个人复盘 —— 通用 CLI，支持 Claude Code / Codex / 任意 AI agent",
   "bin": {
-    "typeless-personal-review": "bin/install.js"
+    "typeless-personal-review": "bin/cli.js",
+    "typeless-review": "bin/cli.js"
   },
   "files": [
     "bin/",
-    "skill/"
+    "core/",
+    "adapters/"
   ],
-  "keywords": ["claude-code", "claude-skill", "typeless", "personal-review", "voice"],
+  "keywords": ["claude-code", "codex", "claude-skill", "typeless", "personal-review", "voice", "cli"],
   "author": "JamesRRR",
   "license": "MIT",
   "homepage": "https://github.com/JamesRRR/typeless-personal-review",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/JamesRRR/typeless-personal-review.git"
-  },
+  "repository": { "type": "git", "url": "https://github.com/JamesRRR/typeless-personal-review.git" },
   "engines": { "node": ">=16" }
 }
