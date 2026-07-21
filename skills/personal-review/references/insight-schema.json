@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "personal-review insights",
+  "description": "The single data object the semantic pass produces. It is embedded verbatim into report-template.html as the #report-data JSON blob; the template's inline JS renders every section across 3 tabs (总览/洞察/行动). Deterministic bits (tool_scene, the header overview counts you may copy from stats.json) are never eyeballed. Every semantic claim should cite corpus indices via `refs`. NOTE: `rhythm` and `idea_to_action` were removed from the report by user request — do not produce them.",
+  "type": "object",
+  "required": ["meta", "attention_bill", "attention_migration", "recurring_questions", "decisions", "project_momentum", "sops", "recommendations", "emotion_energy", "open_loops"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["label", "range", "total_records", "total_minutes", "generated_note"],
+      "properties": {
+        "label": {"type": "string", "description": "e.g. 2026-W30 — copied from stats.label"},
+        "range": {"type": "object", "properties": {"since": {"type": "string"}, "until": {"type": "string"}}},
+        "total_records": {"type": "integer"},
+        "total_minutes": {"type": "number"},
+        "title": {"type": "string", "description": "e.g. 'Personal Review — 2026 W30'"},
+        "generated_note": {"type": "string", "description": "one-line human summary of the period"}
+      }
+    },
+
+    "attention_bill": {
+      "type": "object",
+      "description": "Section 1 — % of attention by topic. Percentages should sum to ~100.",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["topic", "percent"],
+            "properties": {
+              "topic": {"type": "string"},
+              "percent": {"type": "number"},
+              "note": {"type": "string"},
+              "refs": {"type": "array", "items": {"type": "integer"}}
+            }
+          }
+        }
+      }
+    },
+
+    "attention_migration": {
+      "type": "object",
+      "description": "Section 2 — topic->topic attention flows across the period. Rendered as an inline-SVG Sankey. `nodes` are ordered left(earlier)->right(later); `flows` connect them with a weight.",
+      "properties": {
+        "nodes": {"type": "array", "items": {"type": "object", "required": ["id", "label"], "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "side": {"type": "string", "enum": ["from", "to"]}}}},
+        "flows": {"type": "array", "items": {"type": "object", "required": ["from", "to", "weight"], "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "weight": {"type": "number"}, "note": {"type": "string"}}}},
+        "narrative": {"type": "array", "items": {"type": "string"}, "description": "short bullet phrases like '旅行规划 -> 明显降温'"}
+      }
+    },
+
+    "recurring_questions": {
+      "type": "array",
+      "description": "Section 3 — open questions asked repeatedly. Rendered as frequency bars.",
+      "items": {
+        "type": "object",
+        "required": ["question", "count"],
+        "properties": {
+          "question": {"type": "string"},
+          "count": {"type": "integer", "description": "times this theme recurred"},
+          "refs": {"type": "array", "items": {"type": "integer"}}
+        }
+      }
+    },
+
+    "decisions": {
+      "type": "array",
+      "description": "Section 4 — decisions the user made during the period.",
+      "items": {
+        "type": "object",
+        "required": ["decision"],
+        "properties": {
+          "decision": {"type": "string"},
+          "refs": {"type": "array", "items": {"type": "integer"}}
+        }
+      }
+    },
+
+    "project_momentum": {
+      "type": "array",
+      "description": "Section 5 — momentum per project. Rendered as state chips.",
+      "items": {
+        "type": "object",
+        "required": ["project", "state"],
+        "properties": {
+          "project": {"type": "string"},
+          "state": {"type": "string", "enum": ["rising", "steady", "stalled"]},
+          "note": {"type": "string"},
+          "refs": {"type": "array", "items": {"type": "integer"}}
+        }
+      }
+    },
+
+    "sops": {
+      "type": "array",
+      "description": "Section 6 — repeatable procedures worth codifying (SOPs) surfaced from repeated workflows.",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string"},
+          "why": {"type": "string"},
+          "refs": {"type": "array", "items": {"type": "integer"}}
+        }
+      }
+    },
+
+    "recommendations": {
+      "type": "object",
+      "description": "Section 7 — this-week guidance in three buckets.",
+      "properties": {
+        "complete": {"type": "array", "items": {"type": "string"}},
+        "stop": {"type": "array", "items": {"type": "string"}},
+        "decide": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+
+    "emotion_energy": {
+      "type": "object",
+      "description": "Section 8 — emotion/energy signals inferred from wording (frustration, excitement, hesitation). Not clinical; reflective.",
+      "properties": {
+        "overall": {"type": "string", "description": "one-line read of the period's tone"},
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["signal", "topic"],
+            "properties": {
+              "signal": {"type": "string", "enum": ["frustration", "excitement", "hesitation", "confidence", "fatigue"]},
+              "topic": {"type": "string"},
+              "note": {"type": "string"},
+              "refs": {"type": "array", "items": {"type": "integer"}}
+            }
+          }
+        }
+      }
+    },
+
+    "open_loops": {
+      "type": "array",
+      "description": "未闭环问题追踪 (洞察 tab) — open questions/ideas the user RAISED but never followed up on or reached a conclusion about, so good thinking isn't forgotten. Distinct from recurring_questions (asked repeatedly) — an open loop may be asked only once but left dangling. Rank by how much it matters. `status` marks how stuck it is.",
+      "items": {
+        "type": "object",
+        "required": ["item"],
+        "properties": {
+          "item": {"type": "string", "description": "the dangling question/idea, phrased so future-you knows what to pick up"},
+          "raised": {"type": "string", "description": "optional: when/where it came up, e.g. '7/20 量化讨论中'"},
+          "status": {"type": "string", "enum": ["open", "blocked", "waiting_on_me", "needs_research"], "description": "open=未动; blocked=被卡; waiting_on_me=等我拍板; needs_research=需先调研"},
+          "refs": {"type": "array", "items": {"type": "integer"}}
+        }
+      }
+    },
+
+    "tool_scene": {
+      "type": "object",
+      "description": "Optional Section 11 — DETERMINISTIC. Only include when stats.tool_scene.available is true. Copy apps/web_domains from stats.json. Omit the whole object when unavailable so the template hides the section.",
+      "properties": {
+        "apps": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "count": {"type": "integer"}}}},
+        "web_domains": {"type": "array", "items": {"type": "object", "properties": {"domain": {"type": "string"}, "count": {"type": "integer"}}}},
+        "note": {"type": "string"}
+      }
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "skill": "personal-review",
+  "notes": "Realistic trigger prompts + assertions. The collector is deterministic and fast; the semantic pass produces insights.json against references/insight-schema.json; the report is a self-contained HTML Artifact + markdown mirror.",
+  "cases": [
+    {
+      "name": "default-week",
+      "prompt": "帮我做一下这周的 Personal Review",
+      "assert": [
+        "runs collector with --range week (default), reads stats.json + corpus.jsonl",
+        "produces insights.json valid against references/insight-schema.json (all 10 required sections present)",
+        "rhythm.by_day and rhythm.by_hour are copied verbatim from stats.json (not recomputed)",
+        "publishes a self-contained HTML Artifact (no external asset/CDN refs) and writes a markdown mirror",
+        "tool_scene section omitted because the current week is v2-only (stats.tool_scene.available=false)"
+      ]
+    },
+    {
+      "name": "tool-scene-present-oldrange",
+      "prompt": "分析我 5 月中旬那一周的 typeless 记录，给我个人复盘",
+      "assert": [
+        "collector run with --since/--until covering mid-May (history table)",
+        "stats.tool_scene.available=true; insights.json includes a tool_scene object with apps (Desktop App / Ghostty / Chrome ...) copied from stats.json",
+        "report renders the 工具/场景分布 section"
+      ]
+    },
+    {
+      "name": "small-sample-alignment",
+      "prompt": "先用一小部分数据（40 条）跑一遍 personal review，让我确认最终 output 的样子",
+      "assert": [
+        "collector run with --limit 40",
+        "full pipeline completes on ~40 records: insights.json + report.html + report.md",
+        "used to lock report shape before a full run"
+      ]
+    },
+    {
+      "name": "full-corpus",
+      "prompt": "把我全部 typeless 记录都分析一遍，做一个总的复盘",
+      "assert": [
+        "collector run with --range all (both tables, ~1300 usable records)",
+        "corpus read in day-chunks if large; insights synthesized across the whole span",
+        "tool_scene present (old table contributes app context)"
+      ]
+    },
+    {
+      "name": "empty-range-graceful",
+      "prompt": "给我看看 6 月 10 号到 6 月 20 号那段的复盘",
+      "assert": [
+        "collector exits 4 (zero usable records in that gap between the two tables)",
+        "skill explains there is no data in that range instead of fabricating a report"
+      ]
+    },
+    {
+      "name": "missing-db-loud",
+      "prompt": "做个 personal review",
+      "setup": "Typeless DB absent / moved",
+      "assert": [
+        "collector --validate or run exits 2 (DB not found)",
+        "skill reports the DB path issue clearly and does not emit an empty report"
+      ]
+    }
+  ]
+}
