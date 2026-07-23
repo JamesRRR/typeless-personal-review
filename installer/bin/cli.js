@@ -83,79 +83,62 @@ function openInBrowser(p) {
 }
 
 /* ---------- install ---------- */
-function copyDir(src, dst) {
-  fs.mkdirSync(dst, { recursive: true });
-  for (const e of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, e.name), d = path.join(dst, e.name);
-    if (e.isDirectory()) copyDir(s, d); else fs.copyFileSync(s, d);
-  }
-}
 
-function detectAgent() {
-  // 有哪个 agent 的配置目录存在就优先它
-  if (fs.existsSync(path.join(os.homedir(), ".claude"))) return "claude";
-  if (fs.existsSync(path.join(os.homedir(), ".codex"))) return "codex";
-  return null;
-}
+// 项目根 = 运行 npx 时所在的目录。skill 装进项目内，不碰家目录。
+const PROJECT = process.cwd();
+
+// 一键装到当前项目的三个 skill 目录，覆盖主流 agent：
+//   .claude/skills/  — Claude Code
+//   .codex/skills/   — Codex（Kimi 等也会 fallback 读这里）
+//   .agents/skills/  — 中立通用约定（Kimi generic group、GLM/MiniMax 兼容 runtime 等）
+// 不弹菜单、不问 agent：同一份 skill 铺到三处，任何 agent 都能读到。
+const SKILL_DIRS = [
+  { dir: ".claude", who: "Claude Code" },
+  { dir: ".codex", who: "Codex / Kimi" },
+  { dir: ".agents", who: "GLM / MiniMax 及其它兼容 agent" },
+];
 
 function install(argv) {
-  const opts = parseFlags(argv, { agent: "--agent" });
-  let agent = opts.agent || detectAgent();
+  parseFlags(argv, {}); // 兼容旧的 --agent 等 flag：忽略，一律全装
+  log(`\n${C.b}📿 Personal Review${C.x}`);
+  log(`${C.dim}目标项目：${PROJECT}${C.x}\n`);
 
-  if (!agent) {
-    log(`${C.y}没检测到 Claude 或 Codex 的配置目录。${C.x}`);
-    log(`请指定：${C.b}npx typeless-review install --agent claude|codex|generic${C.x}`);
-    log(`${C.dim}（generic = 通用，任何 agent 都能用的一份指令文档）${C.x}`);
-    process.exit(1);
+  log(`${C.dim}skill：${C.x}`);
+  for (const t of SKILL_DIRS) {
+    const dst = path.join(PROJECT, t.dir, "skills", "personal-review");
+    layoutSkill(dst);
+    log(`  ${C.g}✓${C.x} ${path.join(t.dir, "skills", "personal-review")}  ${C.dim}(${t.who})${C.x}`);
   }
 
-  const installers = {
-    claude: installClaude,
-    codex: installCodex,
-    generic: installGeneric,
-  };
-  const fn = installers[agent];
-  if (!fn) die(`不支持的 agent：${agent}（可选 claude / codex / generic）`);
-  fn();
+  // slash command：只有 Claude / Codex 有 commands 目录约定（.agents 没有）。
+  log(`${C.dim}slash command（/personal-review）：${C.x}`);
+  for (const dir of [".claude", ".codex"]) {
+    const cmdDst = path.join(PROJECT, dir, "commands", "personal-review.md");
+    fs.mkdirSync(path.dirname(cmdDst), { recursive: true });
+    fs.copyFileSync(path.join(ADAPTERS, "command", "personal-review.md"), cmdDst);
+    log(`  ${C.g}✓${C.x} ${path.join(dir, "commands", "personal-review.md")}`);
+  }
+
+  log(`\n${C.g}已装到当前项目。${C.x}`);
+  log(`用法：在这个项目里打开你的 agent，可以——`);
+  log(`  · 直接说「帮我做这周的个人复盘」（skill 自动触发，任何 agent 都行）`);
+  log(`  · 或用 slash：${C.g}/personal-review${C.x}（Claude Code / Codex）`);
+  log(`${C.dim}若 agent 未立即识别，重启会话让它重新扫描本项目 skills / commands。${C.x}`);
+  log(`${C.dim}跟随本项目；换项目请在那个项目里重新装。前置：Typeless + Python 3 + Node。数据全程本地。${C.x}\n`);
 }
 
-function installClaude() {
-  const dst = path.join(os.homedir(), ".claude", "skills", "personal-review");
+// 把一份完整 skill（SKILL.md + scripts/references/assets）铺到目标目录。
+function layoutSkill(dst) {
   if (fs.existsSync(dst)) fs.rmSync(dst, { recursive: true, force: true });
-  // Claude skill = 适配层的 SKILL.md + 共用的 core 资产
-  copyDir(path.join(ADAPTERS, "claude"), dst);
   fs.mkdirSync(path.join(dst, "scripts"), { recursive: true });
   fs.mkdirSync(path.join(dst, "references"), { recursive: true });
   fs.mkdirSync(path.join(dst, "assets"), { recursive: true });
+  // 用 agent 无关的 SKILL.md（走 npx CLI，不硬编码任一 agent 的家目录路径）
+  fs.copyFileSync(path.join(ADAPTERS, "skill", "SKILL.md"), path.join(dst, "SKILL.md"));
   fs.copyFileSync(path.join(CORE, "collect.py"), path.join(dst, "scripts", "collect.py"));
   fs.copyFileSync(path.join(CORE, "insight-schema.json"), path.join(dst, "references", "insight-schema.json"));
   fs.copyFileSync(path.join(CORE, "analysis-guide.md"), path.join(dst, "references", "analysis-guide.md"));
   fs.copyFileSync(path.join(CORE, "report-template.html"), path.join(dst, "assets", "report-template.html"));
-  log(`\n${C.b}📿 Personal Review · Claude Code${C.x}`);
-  log(`${C.g}✓ 已装到${C.x} ${dst}`);
-  log(`\n用法：在 Claude Code 里说 ${C.g}/personal-review${C.x}（或「帮我做这周的复盘」）`);
-  log(`${C.dim}前置：Typeless + Python 3。数据全程本地。${C.x}\n`);
-}
-
-function installCodex() {
-  const dst = path.join(os.homedir(), ".typeless-review");
-  copyDir(CORE, dst);
-  fs.copyFileSync(path.join(ADAPTERS, "codex", "AGENTS.md"), path.join(dst, "AGENTS.md"));
-  log(`\n${C.b}📿 Personal Review · Codex${C.x}`);
-  log(`${C.g}✓ 核心 + Codex 指令已装到${C.x} ${dst}`);
-  log(`\n用法：让 Codex 读 ${C.g}${path.join(dst, "AGENTS.md")}${C.x} 并按其中步骤跑。`);
-  log(`${C.dim}前置：Typeless + Python 3 + Node。数据全程本地。${C.x}\n`);
-}
-
-function installGeneric() {
-  const dst = path.join(os.homedir(), ".typeless-review");
-  copyDir(CORE, dst);
-  fs.copyFileSync(path.join(ADAPTERS, "generic", "PROMPT.md"), path.join(dst, "PROMPT.md"));
-  log(`\n${C.b}📿 Personal Review · 通用${C.x}`);
-  log(`${C.g}✓ 核心 + 通用指令已装到${C.x} ${dst}`);
-  log(`\n用法：把 ${C.g}${path.join(dst, "PROMPT.md")}${C.x} 的内容贴给任何 AI agent，`);
-  log(`它会告诉 agent 怎么一步步用 collect / render 出你的复盘。`);
-  log(`${C.dim}前置：Typeless + Python 3 + Node。数据全程本地。${C.x}\n`);
 }
 
 /* ---------- helpers ---------- */
@@ -172,8 +155,9 @@ function help() {
   log(`${C.b}typeless-review${C.x} — 把 Typeless 语音记录变成图示化个人复盘
 
 ${C.b}用法${C.x}
-  npx typeless-review install [--agent claude|codex|generic]
-        把适配层装到对应 agent（不带 --agent 会自动检测）
+  npx typeless-review install
+        把 skill 装进当前项目的 .claude/.codex/.agents 三个 skills 目录，
+        覆盖 Claude Code / Codex / Kimi / GLM / MiniMax 等主流 agent
   npx typeless-review collect [--range week|month|all] [--out-dir DIR] [--validate]
         读本地库 → 出 corpus.jsonl + stats.json
   npx typeless-review render <insights.json> [--out FILE] [--open]
@@ -190,10 +174,10 @@ switch (cmd) {
   case "install": install(rest); break;
   case "-h": case "--help": case "help": help(); break;
   case undefined:
-    // 无子命令 = 一键安装（兼容老的 `npx typeless-personal-review`）
+    // 无子命令 = 一键装到当前项目的 .claude/.codex/.agents
     install([]); break;
   default:
-    // 只带 flag（如 --agent codex）也走 install
+    // 只带 flag 也走 install（flag 一律忽略，全装）
     if (cmd.startsWith("--")) { install(process.argv.slice(2)); }
     else { die(`未知命令：${cmd}\n运行 npx typeless-review --help 看用法`); }
 }

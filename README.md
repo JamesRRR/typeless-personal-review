@@ -21,26 +21,32 @@
 
 ## 安装
 
-**一行命令（推荐）**
+**一行命令（推荐）** —— 装进当前项目，`cd` 到目标项目再跑：
 
 ```bash
+cd your-project
 npx typeless-personal-review install
 ```
 
-自动检测你在用 Claude 还是 Codex，装对应的适配层。也可以指定：
+一条命令搞定，不问 agent。skill 会同时装进**当前项目**的三个 skill 目录，
+再给 Claude Code / Codex 各装一个 `/personal-review` slash command——跟随项目走，不碰家目录：
 
-```bash
-npx typeless-personal-review install --agent claude    # Claude Code
-npx typeless-personal-review install --agent codex     # Codex
-npx typeless-personal-review install --agent generic   # 任意 agent（给你一份指令文档）
-```
+| 装的东西 | 位置 | 谁用它 |
+|---|---|---|
+| skill | `./.claude/skills/personal-review/` | Claude Code |
+| skill | `./.codex/skills/personal-review/` | Codex、Kimi CLI（也 fallback 读这里） |
+| skill | `./.agents/skills/personal-review/` | GLM / MiniMax 及其它兼容 runtime 的通用约定 |
+| slash 命令 | `./.claude/commands/`、`./.codex/commands/` | Claude Code / Codex 的 `/personal-review` |
 
-**Claude Code 用户也可以**手动放到 skills 目录，或下载
-[`personal-review.skill`](personal-review.skill) 安装包：
+三处装同一份 skill，无论用哪个 agent 都能读到。换一个项目要用，就在那个项目里再装一次。
+
+> 装的是隐藏目录（`.` 开头），Finder 默认看不见——`ls -la` 或在编辑器里可以看到。
+
+**也可以**手动把 skill 放进某个项目：
 
 ```bash
 git clone https://github.com/JamesRRR/typeless-personal-review.git
-cp -R typeless-personal-review/skills/personal-review ~/.claude/skills/
+cp -R typeless-personal-review/skills/personal-review your-project/.claude/skills/
 ```
 
 > 前置：本机装了 Typeless 桌面版并已有一些语音记录（数据在
@@ -49,18 +55,14 @@ cp -R typeless-personal-review/skills/personal-review ~/.claude/skills/
 
 ## 使用
 
-**Claude Code** — 直接说，或用 slash command：
+在装了它的那个项目里打开你的 agent（Claude Code / Codex / Kimi / GLM / MiniMax…），
+说一句「帮我做一下这周的 personal review」即可。Claude Code 里也可以用 slash command：
 
 ```
 /personal-review            # 默认最近一周
 /personal-review month      # 最近一个月
 /personal-review all        # 全量
 ```
-
-也可以用自然语言：「帮我做一下这周的 personal review」。
-
-**Codex / 其他 agent** — 让它读装好的指令文档（`~/.typeless-review/AGENTS.md` 或
-`PROMPT.md`），按里面的 4 步跑。
 
 底层就三个命令，任何 agent 都能调：
 
